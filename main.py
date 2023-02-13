@@ -4,6 +4,7 @@ from telebot import types
 from secret import TOKEN
 from deep_translator import GoogleTranslator
 
+# please put in your own token
 bot = telebot.TeleBot(TOKEN)
 used_words = set()
 last_l_u = ''
