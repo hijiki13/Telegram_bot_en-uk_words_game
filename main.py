@@ -11,15 +11,15 @@ bot = telebot.TeleBot(TOKEN)
 used_words = set()
 last_l_u = ''
 cur_word = ''
-with open('corncob_lowercase.txt', 'r') as f:
-    words = set()
-    data = f.read().split('\n')
-    for el in data:
-        words.add(el)
 
 
 @bot.message_handler(commands=['start'])
 def welcome(msg):
+    with open('corncob_lowercase.txt', 'r') as f:
+        words = set()
+        data = f.read().split('\n')
+        for el in data:
+            words.add(el)
     global used_words, last_l_u, cur_word
     last_l_u = ''
     cur_word = ''
