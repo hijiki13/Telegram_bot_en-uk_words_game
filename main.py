@@ -2,11 +2,11 @@ import telebot
 import requests
 import os
 from telebot import types
-from secret import TOKEN
+# from secret import TOKEN
 from deep_translator import GoogleTranslator
 
 # please put in your own token
-# TOKEN = os.getenv('TOKEN')
+TOKEN = os.getenv('TOKEN')
 bot = telebot.TeleBot(TOKEN)
 used_words = set()
 words = set()
