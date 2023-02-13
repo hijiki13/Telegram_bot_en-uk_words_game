@@ -20,7 +20,9 @@ with open('corncob_lowercase.txt', 'r') as f:
 
 @bot.message_handler(commands=['start'])
 def welcome(msg):
-    global used_words
+    global used_words, last_l_u, cur_word
+    last_l_u = ''
+    cur_word = ''
     used_words = set()
     bot.send_message(msg.chat.id, "Let's start! Your word: ")
 
