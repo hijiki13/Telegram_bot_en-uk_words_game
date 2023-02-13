@@ -2,28 +2,26 @@ import telebot
 import requests
 import os
 from telebot import types
-# from secret import TOKEN
+from secret import TOKEN
 from deep_translator import GoogleTranslator
 
 # please put in your own token
-TOKEN = os.getenv('TOKEN')
+# TOKEN = os.getenv('TOKEN')
 bot = telebot.TeleBot(TOKEN)
 used_words = set()
+words = set()
 last_l_u = ''
 cur_word = ''
 
 
 @bot.message_handler(commands=['start'])
 def welcome(msg):
+    global words
     with open('corncob_lowercase.txt', 'r') as f:
         words = set()
         data = f.read().split('\n')
         for el in data:
             words.add(el)
-    global used_words, last_l_u, cur_word
-    last_l_u = ''
-    cur_word = ''
-    used_words = set()
     bot.send_message(msg.chat.id, "Let's start! Your word: ")
 
 
@@ -100,9 +98,11 @@ def show_def(query):
 
 @bot.callback_query_handler(lambda query: query.data == 'lost')
 def end_game(query):
-    global used_words
-    bot.send_message(query.message.chat.id, f'Game over! Words used in this session: {len(used_words)}. Good job!')
+    global used_words, last_l_u, cur_word
+    bot.send_message(query.message.chat.id, f'Game over! \nWords used in this session: {len(used_words)}. Good job!\n Please press /start to play again.')
     used_words = set()
+    last_l_u = ''
+    cur_word = ''
     return
 
 
