@@ -4,7 +4,7 @@ import requests
 import sqlalchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session
 from os import getenv
-from secret import TOKEN
+# from secret import TOKEN
 from deep_translator import GoogleTranslator
 from random import shuffle
 
