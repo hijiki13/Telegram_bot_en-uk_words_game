@@ -4,8 +4,9 @@ import requests
 import sqlalchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session
 from os import getenv
-# from secret import TOKEN
+from secret import TOKEN
 from deep_translator import GoogleTranslator
+from random import shuffle
 
 
 class Base(DeclarativeBase):
@@ -18,13 +19,11 @@ class User(Base):
     last_l_u: Mapped[str]
     cur_word: Mapped[str]
     used_words: Mapped[str]
-    words: Mapped[str]
     
 
 # please put in your own token
 TOKEN = getenv('TOKEN')
 bot = telebot.TeleBot(TOKEN)
-
 
 engine = sqlalchemy.create_engine("sqlite:///users.db")
 connection = engine.connect()
@@ -35,10 +34,6 @@ Base.metadata.create_all(engine)
 @bot.message_handler(commands=['start'])
 def welcome(msg):
     session = Session(engine)
-
-    with open('corncob_lowercase.txt', 'r') as f:
-        words = f.read()
-
     with session as db:
         user = db.query(User).filter(msg.chat.id == User.user_id).first()
         
@@ -47,8 +42,7 @@ def welcome(msg):
                 user_id=msg.chat.id,
                 last_l_u='',
                 cur_word='',
-                used_words='',
-                words=words
+                used_words=''
             )
             db.add(user)
             db.commit()
@@ -57,7 +51,6 @@ def welcome(msg):
             user.last_l = ''
             user.cur_word = ''
             user.used_words = ''
-            user.words = words
             db.commit()
 
     bot.send_message(msg.chat.id, "Let's start! Your word: ")
@@ -65,32 +58,33 @@ def welcome(msg):
 
 @bot.message_handler(content_types=['text'])
 def game(msg):
-    session = Session(engine)
+    with open('corncob_lowercase.txt', 'r') as f:
+        data = f.read()
+        words = data.split('\n')
+        words.pop()
+        shuffle(words)
 
-    if invalid_word(msg):
+    session = Session(engine)
+    if invalid_word(msg, words):
         return
 
     with session as db:
         user = session.query(User).filter(msg.chat.id == User.user_id).first()
-        words = set(user.words.split('\n'))
-
         if user.last_l_u:
-            if invalid_word(msg, user.last_l_u):
+            if invalid_word(msg, words, user.last_l_u):
                 return
             
-        user.used_words += msg.text + '\n'
-        words.remove(msg.text.lower())
+        user.used_words += msg.text.lower() + '\n'
         user.last_l = msg.text[-1].lower()
         db.commit()
 
         for elem in words:
-
             if elem.startswith(user.last_l):
+                if elem in set(user.used_words.split('\n')):
+                    continue
                 user.cur_word = elem
                 bot.send_message(msg.chat.id, f'Word starting with {user.last_l.upper()}: {elem.capitalize()} ', reply_markup=create_btns())
                 user.used_words += elem + '\n'
-                words.remove(elem)
-                user.words = '\n'.join(words)
                 user.last_l_u = elem[-1]
                 db.commit()
                 break
@@ -100,7 +94,7 @@ def game(msg):
             return
 
 
-def invalid_word(msg, last_l=None):
+def invalid_word(msg, words, last_l=None):
     session = Session(engine)
     msg_text = msg.text.lower()
 
@@ -112,15 +106,14 @@ def invalid_word(msg, last_l=None):
     with session as db:
         user = db.query(User).filter(msg.chat.id == User.user_id).first()
         used_words = set(user.used_words.split('\n'))
-        words = set(user.words.split('\n'))
 
-        if msg_text in used_words:
-            bot.send_message(msg.chat.id, 'This word was already used!')
-            return True
+    if msg_text in used_words:
+        bot.send_message(msg.chat.id, 'This word was already used!')
+        return True
 
-        if msg_text not in words:
-            bot.send_message(msg.chat.id, "Sorry, this is unknown word! Are you sure it's not a typo?")
-            return True
+    if msg_text not in words:
+        bot.send_message(msg.chat.id, "Sorry, this is unknown word! Are you sure it's not a typo?")
+        return True
 
 
 def create_btns():
