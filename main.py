@@ -2,29 +2,18 @@ import telebot
 from telebot import types
 import requests
 import sqlalchemy
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session
+from sqlalchemy.orm import DeclarativeBase, Session
 from os import getenv
-# from secret import TOKEN
 from deep_translator import GoogleTranslator
 from random import shuffle
+from model import Base, User
 
-
-class Base(DeclarativeBase):
-    pass
-
-
-class User(Base):
-    __tablename__ = "user"
-    user_id: Mapped[int] = mapped_column(primary_key=True)
-    last_l_u: Mapped[str]
-    cur_word: Mapped[str]
-    used_words: Mapped[str]
-    
 
 # please put in your own token
 TOKEN = getenv('TOKEN')
 bot = telebot.TeleBot(TOKEN)
 
+# TODO: строку подключения к БД можно как и токен вкинуть в переменные окружения. Если прийдется переходить на другую СУБД это очень упростит задачу
 engine = sqlalchemy.create_engine("sqlite:///users.db")
 connection = engine.connect()
 Base.metadata.drop_all(engine)
@@ -162,4 +151,5 @@ def end_game(query):
     return
 
 
+# TODO: движок БД не работает на глобальном уровне из за этого пула. Приложение событийно-ориентированно
 bot.infinity_polling()
